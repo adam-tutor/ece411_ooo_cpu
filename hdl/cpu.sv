@@ -62,27 +62,35 @@ import rv32i_types::*;
     logic   [255:0] dfp_wdata;
     logic           dfp_resp;
 
+    logic   [31:0]  dfp_addr2;
+    logic           dfp_read2;
+    logic   [255:0] dfp_rdata2;
+    logic           dfp_resp2;
+
+    logic   arbiter_idle;
+
     assign imem_wmask = '0;
     assign imem_wdata = '0;
     
-    i_cache #(.NUM_SET(NUM_SET_CACHE), .NUM_WAY(4)) i_memcache(
+    cache #(.NUM_SET(NUM_SET_CACHE), .NUM_WAY(4)) i_memcache(
         .clk(clk),
         .rst(rst),
         .flush(flush),
         // cpu side signals, ufp -> upward facing port
         .ufp_addr(imem_addr),
         .ufp_rmask(imem_rmask),
-        .ufp_wmask(imem_wmask),
-        .ufp_wdata(imem_wdata),
         .ufp_rdata(imem_rdata),
         .ufp_resp(imem_resp),
+
+        .ufp_wmask(imem_wmask),
+        .ufp_wdata(imem_wdata),
         // memory side signals, dfp -> downward facing port
-        .dfp_addr(ibmem_addr),
-        .dfp_read(ibmem_read),
+        .dfp_addr(dfp_addr2),
+        .dfp_read(dfp_read2),
         .dfp_write(ibmem_write),
         .dfp_wdata(ibmem_wdata),
-        .dfp_rdata(ibmem_rdata),
-        .dfp_resp(ibmem_resp)
+        .dfp_rdata(dfp_rdata2),
+        .dfp_resp(dfp_resp2)
     );
 
     cache #(.NUM_SET(NUM_SET_CACHE), .NUM_WAY(4)) d_memcache(
@@ -112,6 +120,27 @@ import rv32i_types::*;
 
     cacheline_adaptor cacheline_adaptor(
         .*
+    );
+
+    prefetcher prefetcher(
+        .clk(clk), .rst(rst), .flush(flush),
+    // ICACHE -> PREFETCHER
+        .dfp_addr(dfp_addr2),
+        .dfp_read(dfp_read2),
+        //.imem_addr(imem_addr),
+        //.branch_taken(branch_taken),
+        //.jump_taken(jump_taken),
+    // PREFETCHER -> ICACHE
+        .dfp_rdata(dfp_rdata2),
+        .dfp_resp(dfp_resp2),
+    //ARBITER -> PREFETCHER
+        .ibmem_rdata(ibmem_rdata),
+        .ibmem_resp(ibmem_resp),
+    //PREFETCHER -> ARBITER
+        .ibmem_addr(ibmem_addr),
+        .ibmem_read(ibmem_read),
+    //ARBITER -> PF
+        .arbiter_idle(arbiter_idle)
     );
 
     inst_queue_interface inst_queue_i; 
