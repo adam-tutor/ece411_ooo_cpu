@@ -20,7 +20,9 @@ import rv32i_types::*;
     output  logic   [255:0] dfp_wdata,
 
     input   logic   [255:0] dfp_rdata,
-    input   logic           dfp_resp
+    input   logic           dfp_resp,
+
+    output logic arbiter_idle
 );
 
 enum logic [2:0] {ICACHE, DCACHE_READ, DCACHE_WRITE, IDLE, WAIT} state, next_state;
@@ -29,6 +31,8 @@ logic           temp_imem_write;
 
 assign temp_imem_write = ibmem_write;
 assign temp_imem_wdata = ibmem_wdata;
+
+assign arbiter_idle = (state == IDLE);
 
 always_ff @( posedge clk ) begin
     if (rst) begin
