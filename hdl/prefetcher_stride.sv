@@ -172,7 +172,10 @@ import rv32i_types::*;
                 for(int i = 0; i < NUM_ENTRIES; i++) begin
                     if(dfp_addr == prev_accessed_addrs[i]) begin
                         dfp_rdata = dbmem_rdata_reg[i];
-                        dfp_resp = dbmem_resp;
+                        //dfp_resp = dbmem_resp;
+                        dfp_resp = 1'b1; //The previous line made it so that even though the data was already available in the prefetcher,
+                                         //the cache still had to wait for a response from the memory, completely removing any optimization.
+                                         //I only just noticed this as of 6/4/2025.
                     end
                     else if(dbmem_resp) begin
                         dfp_resp = 1'b1;
